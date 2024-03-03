@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import countries from "./data";
-import gfg from  "../assets/gfg.svg";
-
+import gfg from "../assets/gfg.svg";
 
 const Translate = () => {
   useEffect(() => {
@@ -14,11 +13,11 @@ const Translate = () => {
     selectTag.forEach((tag, id) => {
       for (let country_code in countries) {
         let selected =
-          id == 0
-            ? country_code == "en-GB"
+          id === 0
+            ? country_code === "en-GB"
               ? "selected"
               : ""
-            : country_code == "hi-IN"
+            : country_code === "hi-IN"
             ? "selected"
             : "";
         let option = `<option ${selected} value="${country_code}">${countries[country_code]}</option>`;
@@ -44,38 +43,39 @@ const Translate = () => {
       }
     });
 
-    translateBtn.addEventListener("click", () => {
+    translateBtn.addEventListener("click", async () => {
       let text = fromText.value.trim();
       let translateFrom = selectTag[0].value;
       let translateTo = selectTag[1].value;
       if (!text) return;
       toText.setAttribute("placeholder", "Translating...");
-      let apiUrl = `https://api.mymemory.translated.net/get?q=${text}&langpair=${translateFrom}|${translateTo}`;
-      fetch(apiUrl)
-        .then((res) => res.json())
-        .then((data) => {
-          toText.value = data.responseData.translatedText;
-          data.matches.forEach((data) => {
-            if (data.id === 0) {
-              toText.value = data.translation;
-            }
-          });
-          toText.setAttribute("placeholder", "Translation");
-        });
-    });
+      try {
+         const response = await fetch(`http://localhost:5000/?text=${text}&source=${translateFrom}&target=${translateTo}`);
+         if (!response.ok) {
+           throw new Error(`HTTP error! status: ${response.status}`);
+         }
+         const translatedText = await response.text();
+         toText.value = translatedText;
+         toText.setAttribute("placeholder", "Translation");
+      } catch (error) {
+         console.error("Fetch error:", error);
+         toText.setAttribute("placeholder", "Error in translation");
+      }
+     });
+     
 
     icons.forEach((icon) => {
       icon.addEventListener("click", ({ target }) => {
         if (!fromText.value || !toText.value) return;
         if (target.classList.contains("fa-copy")) {
-          if (target.id == "from") {
+          if (target.id === "from") {
             navigator.clipboard.writeText(fromText.value);
           } else {
             navigator.clipboard.writeText(toText.value);
           }
         } else {
           let utterance;
-          if (target.id == "from") {
+          if (target.id === "from") {
             utterance = new SpeechSynthesisUtterance(fromText.value);
             utterance.lang = selectTag[0].value;
           } else {
@@ -90,7 +90,11 @@ const Translate = () => {
   return (
     <>
       <div className="above-container ">
-        <img src={gfg} className="above-container-content" alt="GeeksforGeeks Logo" />
+        <img
+          src={gfg}
+          className="above-container-content"
+          alt="GeeksforGeeks Logo"
+        />
         <h1 className="above-container-content">Translate</h1>
       </div>
 
@@ -98,13 +102,13 @@ const Translate = () => {
         <div className="wrapper">
           <div className="text-input">
             <textarea
-              spellcheck="false"
+              spellCheck="false"
               className="from-text"
               placeholder="Enter text"
             ></textarea>
             <textarea
-              spellcheck="false"
-              readonly
+              spellCheck="false"
+              readOnly
               disabled
               className="to-text"
               placeholder="Translation"
